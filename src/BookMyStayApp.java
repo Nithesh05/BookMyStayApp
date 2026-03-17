@@ -95,13 +95,72 @@ class BookingService {
     }
 }
 
+// ✅ Add-On Service class
+class AddOnService {
+    private String name;
+    private double cost;
+
+    public AddOnService(String name, double cost) {
+        this.name = name;
+        this.cost = cost;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getCost() {
+        return cost;
+    }
+}
+
+// ✅ Manager class
+class AddOnServiceManager {
+
+    private Map<String, List<AddOnService>> serviceMap = new HashMap<>();
+
+    public void addService(String reservationId, AddOnService service) {
+        serviceMap.putIfAbsent(reservationId, new ArrayList<>());
+        serviceMap.get(reservationId).add(service);
+    }
+
+    public double calculateTotalCost(String reservationId) {
+        double total = 0;
+
+        List<AddOnService> services = serviceMap.get(reservationId);
+
+        if (services != null) {
+            for (AddOnService s : services) {
+                total += s.getCost();
+            }
+        }
+
+        return total;
+    }
+
+    public void displayServices(String reservationId) {
+        List<AddOnService> services = serviceMap.get(reservationId);
+
+        if (services == null) {
+            System.out.println("No services added.");
+            return;
+        }
+
+        System.out.println("\nServices for Reservation " + reservationId + ":");
+        for (AddOnService s : services) {
+            System.out.println("- " + s.getName() + " : ₹" + s.getCost());
+        }
+    }
+}
+
+// ✅ FINAL MAIN (merged)
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
         System.out.println("=================================");
         System.out.println("Book My Stay - Hotel Booking App");
-        System.out.println("Version 6.1");
+        System.out.println("Version 7.0");
         System.out.println("=================================");
 
         RoomInventory inventory = new RoomInventory();
@@ -113,7 +172,18 @@ public class BookMyStayApp {
         bookingService.addRequest(new Reservation("David", "Single Room"));
 
         bookingService.processBookings();
-
         inventory.displayInventory();
+
+        // ✅ Add-On Feature
+        AddOnServiceManager manager = new AddOnServiceManager();
+
+        manager.addService("R101", new AddOnService("Food", 500));
+        manager.addService("R101", new AddOnService("Spa", 1500));
+        manager.addService("R101", new AddOnService("WiFi", 300));
+
+        manager.displayServices("R101");
+
+        double total = manager.calculateTotalCost("R101");
+        System.out.println("Total Add-On Cost: ₹" + total);
     }
 }
