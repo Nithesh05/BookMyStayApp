@@ -10,6 +10,7 @@ class Reservation {
     }
 }
 
+// ---------------- ROOM INVENTORY ----------------
 class RoomInventory {
 
     private final Map<String, Integer> inventory = new HashMap<>();
@@ -36,15 +37,54 @@ class RoomInventory {
     }
 }
 
+// ---------------- BOOKING HISTORY (UC8) ----------------
+class BookingHistory {
+
+    private List<Reservation> history = new ArrayList<>();
+
+    public void addReservation(Reservation reservation) {
+        history.add(reservation);
+    }
+
+    public List<Reservation> getAllReservations() {
+        return history;
+    }
+}
+
+// ---------------- REPORT SERVICE (UC8) ----------------
+class BookingReportService {
+
+    public void generateReport(List<Reservation> reservations) {
+
+        System.out.println("\n=== Booking Report ===");
+
+        if (reservations.isEmpty()) {
+            System.out.println("No bookings found.");
+            return;
+        }
+
+        for (Reservation r : reservations) {
+            System.out.println("Guest: " + r.guestName +
+                    " | Room: " + r.roomType);
+        }
+
+        System.out.println("Total Bookings: " + reservations.size());
+    }
+}
+
+// ---------------- BOOKING SERVICE ----------------
 class BookingService {
 
     private final Queue<Reservation> requestQueue = new LinkedList<>();
     private final Set<String> allocatedRoomIds = new HashSet<>();
     private final Map<String, Set<String>> allocatedRooms = new HashMap<>();
-    private final RoomInventory inventory;
 
-    BookingService(RoomInventory inventory) {
+    private final RoomInventory inventory;
+    private final BookingHistory history; // ✅ UC8
+
+    BookingService(RoomInventory inventory, BookingHistory history) {
         this.inventory = inventory;
+        this.history = history;
     }
 
     public void addRequest(Reservation reservation) {
@@ -69,6 +109,9 @@ class BookingService {
                         .add(roomId);
 
                 inventory.decrementRoom(roomType);
+
+                // ✅ UC8: Store in history
+                history.addReservation(reservation);
 
                 System.out.println("Reservation confirmed for "
                         + reservation.guestName +
@@ -95,7 +138,7 @@ class BookingService {
     }
 }
 
-// ✅ Add-On Service class
+// ---------------- ADD-ON SERVICE (UC7) ----------------
 class AddOnService {
     private String name;
     private double cost;
@@ -114,7 +157,7 @@ class AddOnService {
     }
 }
 
-// ✅ Manager class
+// ---------------- ADD-ON MANAGER (UC7) ----------------
 class AddOnServiceManager {
 
     private Map<String, List<AddOnService>> serviceMap = new HashMap<>();
@@ -153,19 +196,22 @@ class AddOnServiceManager {
     }
 }
 
-// ✅ FINAL MAIN (merged)
+// ---------------- MAIN CLASS ----------------
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
         System.out.println("=================================");
         System.out.println("Book My Stay - Hotel Booking App");
-        System.out.println("Version 7.0");
+        System.out.println("Version 8.0");
         System.out.println("=================================");
 
+        // Core system
         RoomInventory inventory = new RoomInventory();
-        BookingService bookingService = new BookingService(inventory);
+        BookingHistory history = new BookingHistory();
+        BookingService bookingService = new BookingService(inventory, history);
 
+        // Booking requests
         bookingService.addRequest(new Reservation("Alice", "Single Room"));
         bookingService.addRequest(new Reservation("Bob", "Double Room"));
         bookingService.addRequest(new Reservation("Charlie", "Suite Room"));
@@ -174,7 +220,11 @@ public class BookMyStayApp {
         bookingService.processBookings();
         inventory.displayInventory();
 
-        // ✅ Add-On Feature
+        // UC8: Report
+        BookingReportService reportService = new BookingReportService();
+        reportService.generateReport(history.getAllReservations());
+
+        // UC7: Add-On Services
         AddOnServiceManager manager = new AddOnServiceManager();
 
         manager.addService("R101", new AddOnService("Food", 500));
